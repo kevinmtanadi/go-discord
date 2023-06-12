@@ -1,35 +1,35 @@
 package handler
 
 import (
-	"go-discord/constant"
+	"go-discord/helper"
 	"go-discord/logger"
-	"go-discord/reaction"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
 )
 
-// MessageHandler : Handle messages entered by user
-func (h Handler) MessageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
+// This package is used to create reaction to a message
 
-	message := m.Content
-	if strings.HasPrefix(message, constant.BOT_PREFIX) {
-		message = strings.TrimPrefix(message, constant.BOT_PREFIX)
-		contents := strings.Split(message, " ")
-		command, args := contents[0], contents[1:]
-		h.HandleCommmand(s, m, command, args)
+func (h Handler) SayHello(s *discordgo.Session, m *discordgo.MessageCreate, args interface{}) {
+	argList := helper.ConvertInterfaceToString(args)
+	name := strings.Join(argList, " ")
+	SendMessage(s, m, name)
+}
+
+// SendMessage : Sends a message to a text channel
+func SendMessage(s *discordgo.Session, m *discordgo.MessageCreate, message string) {
+	_, err := s.ChannelMessageSend(m.ChannelID, message)
+	if err != nil {
+		logger.Log("Failed to send message: " + err.Error())
+		return
 	}
 }
 
-// HandleCommmand : Handle command entered by user
-func (h Handler) HandleCommmand(s *discordgo.Session, m *discordgo.MessageCreate, command string, args interface{}) {
-	if fn, ok := h.Command[command]; ok {
-		fn(s, m, args)
-	} else {
-		reaction.SendMessage(s, m, "Command entered doesn't exist")
-		logger.Log("Command doesn't exist: " + command)
+// SendEmbed : Sends a embed message to a text channel
+func SendEmbed(s *discordgo.Session, m *discordgo.MessageCreate, embed *discordgo.MessageEmbed) {
+	_, err := s.ChannelMessageSendEmbed(m.ChannelID, embed)
+	if err != nil {
+		logger.Log("Failed to send embed: " + err.Error())
+		return
 	}
 }

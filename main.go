@@ -5,7 +5,6 @@ import (
 	"go-discord/constant"
 	"go-discord/handler"
 	"go-discord/logger"
-	"go-discord/reaction"
 	"os"
 	"os/signal"
 	"syscall"
@@ -31,8 +30,9 @@ func main() {
 	discord.AddHandler(h.MessageHandler)
 
 	// Handle messages sent to Discord
-	// When adding a new command to handle, add the function onto reaction package
-	h.Await("hello", reaction.SayHello)
+	// When adding a new command to handle, add the function onto handler package
+	h.Await("hello", h.SayHello)
+	h.Await("join", h.JoinVoiceChannel)
 
 	// Keep the bot alive until stopped
 	Loop()
