@@ -32,7 +32,7 @@ func CreateFile(folderPath, filePath string) {
 	}
 
 	if _, err := os.Stat(folderPath + "/" + filePath); os.IsNotExist(err) {
-		file, err := os.Create(filePath)
+		file, err := os.Create(folderPath + "/" + filePath)
 		if err != nil {
 			log.Fatal(err)
 		}

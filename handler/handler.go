@@ -46,6 +46,6 @@ func (h Handler) HandleCommmand(s *discordgo.Session, m *discordgo.MessageCreate
 		fn(s, m, args)
 	} else {
 		reaction.SendMessage(s, m, "Command entered doesn't exist")
-		logger.Log("Command doesn't exist")
+		logger.Log("Command doesn't exist: " + command)
 	}
 }
