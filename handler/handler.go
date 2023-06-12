@@ -9,42 +9,54 @@ import (
 )
 
 type Handler struct {
-	Command map[string]func(s *discordgo.Session, m *discordgo.MessageCreate, args interface{})
+	s       *discordgo.Session
+	m       *discordgo.MessageCreate
+	Command map[string]func(args ...interface{})
 }
 
 func NewHandler() *Handler {
 	handler := &Handler{
-		Command: make(map[string]func(s *discordgo.Session, m *discordgo.MessageCreate, args interface{})),
+		Command: make(map[string]func(args ...interface{})),
 	}
 	return handler
 }
 
 // Await : Adds a command and the reaction to the command
-func (h Handler) Await(command string, reaction func(s *discordgo.Session, m *discordgo.MessageCreate, args interface{})) {
+func (h *Handler) Await(command string, reaction func(args ...interface{})) {
 	h.Command[command] = reaction
 }
 
-// MessageHandler : Handle messages entered by user
-func (h Handler) MessageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
+// ReadCommand : Handle messages entered by user
+func (h *Handler) ReadCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
 
 	message := m.Content
-	if strings.HasPrefix(message, constant.BOT_PREFIX) {
-		message = strings.TrimPrefix(message, constant.BOT_PREFIX)
-		contents := strings.Split(message, " ")
-		command, args := contents[0], contents[1:]
-		h.HandleCommmand(s, m, command, args)
+	if !strings.HasPrefix(message, constant.BOT_PREFIX) {
+		return
 	}
+
+	h.ResetSession(s, m)
+	message = strings.TrimPrefix(message, constant.BOT_PREFIX)
+	contents := strings.Split(message, " ")
+	command, args := contents[0], contents[1:]
+
+	h.HandleCommmand(command, args)
+}
+
+// ResetSession : Reset session and message create whenever a new command entered
+func (h *Handler) ResetSession(s *discordgo.Session, m *discordgo.MessageCreate) {
+	h.s = s
+	h.m = m
 }
 
 // HandleCommmand : Handle command entered by user
-func (h Handler) HandleCommmand(s *discordgo.Session, m *discordgo.MessageCreate, command string, args interface{}) {
+func (h *Handler) HandleCommmand(command string, args ...interface{}) {
 	if fn, ok := h.Command[command]; ok {
-		fn(s, m, args)
+		fn(args)
 	} else {
-		SendMessage(s, m, "Command entered doesn't exist")
+		h.SendMessage("Command entered doesn't exist")
 		logger.Log("Command doesn't exist: " + command)
 	}
 }

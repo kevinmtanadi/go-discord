@@ -1,24 +1,16 @@
 package handler
 
 import (
-	"go-discord/helper"
+	"fmt"
 	"go-discord/logger"
-	"strings"
 
 	"github.com/bwmarrin/discordgo"
 )
 
-// This package is used to create reaction to a message
-
-func (h Handler) SayHello(s *discordgo.Session, m *discordgo.MessageCreate, args interface{}) {
-	argList := helper.ConvertInterfaceToString(args)
-	name := strings.Join(argList, " ")
-	SendMessage(s, m, name)
-}
-
 // SendMessage : Sends a message to a text channel
-func SendMessage(s *discordgo.Session, m *discordgo.MessageCreate, message string) {
-	_, err := s.ChannelMessageSend(m.ChannelID, message)
+func (h Handler) SendMessage(message string) {
+	fmt.Println(h.s)
+	_, err := h.s.ChannelMessageSend(h.m.ChannelID, message)
 	if err != nil {
 		logger.Log("Failed to send message: " + err.Error())
 		return
@@ -26,8 +18,8 @@ func SendMessage(s *discordgo.Session, m *discordgo.MessageCreate, message strin
 }
 
 // SendEmbed : Sends a embed message to a text channel
-func SendEmbed(s *discordgo.Session, m *discordgo.MessageCreate, embed *discordgo.MessageEmbed) {
-	_, err := s.ChannelMessageSendEmbed(m.ChannelID, embed)
+func (h Handler) SendEmbed(embed *discordgo.MessageEmbed) {
+	_, err := h.s.ChannelMessageSendEmbed(h.m.ChannelID, embed)
 	if err != nil {
 		logger.Log("Failed to send embed: " + err.Error())
 		return
