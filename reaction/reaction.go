@@ -1,7 +1,6 @@
 package reaction
 
 import (
-	"fmt"
 	"go-discord/helper"
 	"go-discord/logger"
 	"strings"
@@ -13,7 +12,6 @@ import (
 
 func SayHello(s *discordgo.Session, m *discordgo.MessageCreate, args interface{}) {
 	argList := helper.ConvertInterfaceToString(args)
-	fmt.Println(argList)
 	name := strings.Join(argList, " ")
 	SendMessage(s, m, name)
 }
