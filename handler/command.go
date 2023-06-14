@@ -10,3 +10,7 @@ func (h *Handler) SayHello(args ...interface{}) {
 	fmt.Println(h.s)
 	h.SendMessage("Hello!")
 }
+
+func (h *Handler) Join(args ...interface{}) {
+	h.JoinVoiceChannel()
+}

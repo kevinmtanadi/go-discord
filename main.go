@@ -32,6 +32,7 @@ func main() {
 	// Handle messages sent to Discord
 	// When adding a new command to handle, add the function onto handler package
 	h.Await("hello", h.SayHello)
+	h.Await("join", h.JoinVoiceChannel)
 
 	// Keep the bot alive until stopped
 	Loop()
