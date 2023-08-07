@@ -1,11 +1,8 @@
 package service
 
 import (
-	"encoding/json"
 	"go-discord/helper"
 	"go-discord/logger"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"time"
 
@@ -27,30 +24,21 @@ func (h *Holiday) FormatString() string {
 	return result
 }
 
+// GetHoliday retrieves upcoming holidays and sends a message to a Discord channel.
+// It takes a *discordgo.Session pointer as a parameter and does not return anything.
 func GetHoliday(s *discordgo.Session) {
-	holidayChannelID := os.Getenv("HOLIDAYT_CHANNEL_ID")
-
-	resp, err := http.Get(os.Getenv("HOLIDAY_API") + "api")
-	if err != nil {
-		logger.Log("Fail calling holiday API: " + err.Error())
-		return
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		logger.Log("Fail reading data: " + err.Error())
-		return
-	}
+	holidayChannelID := os.Getenv("HOLIDAY_CHANNEL_ID")
 
 	holidays := []Holiday{}
-	err = json.Unmarshal(body, &holidays)
+	err := helper.GetResponse(os.Getenv("HOLIDAY_API")+"api", &holidays)
 	if err != nil {
-		logger.Log("Fail binding data: " + err.Error())
-		return
+		logger.Log("Fail getting data: " + err.Error())
 	}
 
 	closeHolidays := ""
+	currentTime := time.Now()
+	threshold := currentTime.AddDate(0, 0, 30)
+
 	for _, holiday := range holidays {
 		if !holiday.IsNationalHoliday {
 			continue
@@ -60,9 +48,6 @@ func GetHoliday(s *discordgo.Session) {
 		if err != nil {
 			logger.Log("Fail parsing date: " + err.Error())
 		}
-
-		currentTime := time.Now()
-		threshold := currentTime.AddDate(0, 0, 30)
 
 		if !date.After(currentTime) || !date.Before(threshold) {
 			continue

@@ -1,7 +1,10 @@
 package helper
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -69,4 +72,33 @@ func ParseDate(dateString string) (time.Time, error) {
 	}
 
 	return date, nil
+}
+
+func GetResponse(url string, result any) (err error) {
+	client := http.Client{
+		Timeout: time.Second * 5,
+	}
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return
+	}
+
+	return nil
 }
