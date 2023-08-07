@@ -41,7 +41,6 @@ func main() {
 	h.Await("join", h.JoinVoiceChannel)
 
 	// Daily call functions at 08:00 AM
-	service.GetHoliday(discord)
 	go service.DailyCall(discord)
 
 	// Keep the bot alive until stopped
