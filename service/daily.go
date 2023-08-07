@@ -2,7 +2,6 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
 	"go-discord/helper"
 	"go-discord/logger"
 	"io/ioutil"
@@ -91,7 +90,6 @@ func GetHoliday(s *discordgo.Session) {
 }
 
 func DailyCall(s *discordgo.Session) {
-	fmt.Println("Created daily calls")
 	c := cron.New()
 
 	c.AddFunc("0 8 0 * * *", func() {
