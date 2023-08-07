@@ -2,3 +2,5 @@ logs/*
 
 *.txt
 .env
+*.webm
+*.download

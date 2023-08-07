@@ -3,8 +3,10 @@ package helper
 import (
 	"encoding/json"
 	"fmt"
+	"go-discord/logger"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -101,4 +103,15 @@ func GetResponse(url string, result any) (err error) {
 	}
 
 	return nil
+}
+
+func DeleteFileExists(fileName string) {
+	if _, err := os.Stat(fileName); err == nil {
+		// File exists, delete it
+		err := os.Remove(fileName)
+		if err != nil {
+			// Handle the error if the file deletion fails
+			logger.Log("Failed deleting file: " + err.Error())
+		}
+	}
 }

@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/subosito/gotenv"
@@ -33,12 +32,11 @@ func main() {
 	h := handler.NewHandler()
 	discord.AddHandler(h.ReadCommand)
 
-	fmt.Println(time.Now())
-
 	// Handle messages sent to Discord
 	// When adding a new command to handle, add the function onto handler package
 	h.Await("hello", h.SayHello)
 	h.Await("join", h.JoinVoiceChannel)
+	h.Await("play", h.PlaySong)
 
 	// Daily call functions at 08:00 AM
 	go service.DailyCall(discord)

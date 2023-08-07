@@ -21,6 +21,8 @@ func Log(message string) {
 
 	log.SetOutput(file)
 	log.Println("=== " + message)
+
+	return
 }
 
 // CreateFile :  Create a folder and file if not exist
