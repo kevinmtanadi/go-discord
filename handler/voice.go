@@ -24,7 +24,3 @@ func (h *Handler) JoinVoiceChannel(args ...interface{}) {
 		return
 	}
 }
-
-func (h *Handler) Disconnect(args ...interface{}) {
-	vc := h.s.State.VoiceState(h.m.GuildID)
-}

@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"go-discord/constant"
 	"go-discord/logger"
+	"os"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -32,13 +32,15 @@ func (h *Handler) ReadCommand(s *discordgo.Session, m *discordgo.MessageCreate) 
 		return
 	}
 
+	botPrefix := os.Getenv("BOT_PREFIX")
+
 	message := m.Content
-	if !strings.HasPrefix(message, constant.BOT_PREFIX) {
+	if !strings.HasPrefix(message, botPrefix) {
 		return
 	}
 
 	h.ResetSession(s, m)
-	message = strings.TrimPrefix(message, constant.BOT_PREFIX)
+	message = strings.TrimPrefix(message, botPrefix)
 	contents := strings.Split(message, " ")
 	command, args := contents[0], contents[1:]
 

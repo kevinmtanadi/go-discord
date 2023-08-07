@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"go-discord/logger"
 
 	"github.com/bwmarrin/discordgo"
@@ -9,7 +8,6 @@ import (
 
 // SendMessage : Sends a message to a text channel
 func (h Handler) SendMessage(message string) {
-	fmt.Println(h.s)
 	_, err := h.s.ChannelMessageSend(h.m.ChannelID, message)
 	if err != nil {
 		logger.Log("Failed to send message: " + err.Error())

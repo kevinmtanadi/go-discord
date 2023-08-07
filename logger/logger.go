@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"go-discord/constant"
 	"log"
 	"os"
 	"strings"
@@ -9,7 +8,7 @@ import (
 
 // Log : Log the message to stdout and log files
 func Log(message string) {
-	absolutePath := constant.LOG_PATH
+	absolutePath := os.Getenv("LOG_PATH")
 	path := strings.Split(absolutePath, "/")
 	folderPath, filePath := path[0], path[1]
 	CreateFile(folderPath, filePath)
