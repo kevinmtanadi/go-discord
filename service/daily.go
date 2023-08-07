@@ -57,20 +57,33 @@ func GetHoliday(s *discordgo.Session) {
 		closeHolidays += holiday.FormatString()
 	}
 
+	var embed discordgo.MessageEmbed
 	if len(closeHolidays) == 0 {
-		embed := discordgo.MessageEmbed{
+		embed = discordgo.MessageEmbed{
 			Title:       "Hari Libur 30 hari kedepan",
 			Description: "Saat ini tidak ada libur",
 		}
-		s.ChannelMessageSendEmbed(holidayChannelID, &embed)
+	} else {
+		embed = discordgo.MessageEmbed{
+			Title:       "Hari Libur 30 hari kedepan",
+			Description: closeHolidays,
+		}
+	}
 
+	previousEmbeds, err := s.ChannelMessages(holidayChannelID, 1, "", "", "")
+	if err != nil {
+		logger.Log("Fail getting previous messages: " + err.Error())
 		return
 	}
 
-	embed := discordgo.MessageEmbed{
-		Title:       "Hari Libur 30 hari kedepan",
-		Description: closeHolidays,
+	if len(previousEmbeds) > 0 {
+		err = s.ChannelMessageDelete(holidayChannelID, previousEmbeds[0].ID)
+		if err != nil {
+			logger.Log("Fail deleting previous message: " + err.Error())
+			return
+		}
 	}
+
 	s.ChannelMessageSendEmbed(holidayChannelID, &embed)
 }
 
