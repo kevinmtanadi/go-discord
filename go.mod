@@ -3,6 +3,7 @@ module go-discord
 go 1.18
 
 require (
+	github.com/bwmarrin/dgvoice v0.0.0-20210225172318-caaac756e02e
 	github.com/bwmarrin/discordgo v0.27.1
 	github.com/iawia002/lux v0.19.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -50,4 +51,5 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230720185612-659f7aaaa771 // indirect
 	google.golang.org/grpc v1.56.2 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
+	layeh.com/gopus v0.0.0-20210501142526-1ee02d434e32 // indirect
 )

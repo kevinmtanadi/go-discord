@@ -6,7 +6,6 @@ import (
 	"go-discord/logger"
 	"go-discord/service"
 	"go-discord/song"
-	"sync"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -14,34 +13,29 @@ import (
 // Always receive arguments as interface{}
 // Create the converter at helper package if not already exists
 
-func (h *Handler) SayHello(args ...interface{}) {
-	h.SendMessage("Hello!")
-}
-
-func (h *Handler) Join(args ...interface{}) {
-	h.JoinVoiceChannel()
-}
-
 func (h *Handler) PlaySong(args ...interface{}) {
 	title := helper.GetArgs(args)
 
+	var embed discordgo.MessageEmbed
 	searchResult, err := service.SearchYoutube(title)
 	if err != nil {
 		logger.Log("Error searching youtube: " + err.Error())
 	}
 
+	if searchResult == nil {
+		embed := discordgo.MessageEmbed{
+			Description: "No song found",
+		}
+		h.SendEmbed(&embed)
+		return
+	}
+
 	songList := song.GetSongListInstance()
 	songList.AddSong(*searchResult)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	go service.DownloadAudio(searchResult.URL, &wg)
-
-	wg.Wait()
-
-	embed := discordgo.MessageEmbed{
-		Description: fmt.Sprintf("Currently playing **%s**", searchResult.Title),
+	embed = discordgo.MessageEmbed{
+		Description: fmt.Sprintf("**Added Song**\n\n**Song Title**\n%s\n**Track Length**\n%s", searchResult.Title, helper.FormatTime(searchResult.Duration)),
 	}
+
 	h.SendEmbed(&embed)
 }

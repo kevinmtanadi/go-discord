@@ -1,68 +1,85 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"go-discord/song"
-	"net/http"
 	"os"
 	"regexp"
 	"strconv"
 	"time"
 
-	"google.golang.org/api/googleapi/transport"
+	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
 
 // SearchYoutube searches for a song on YouTube based on the given query.
 //
 // Parameters:
-//   query (string): The search query.
+//
+//	query (string): The search query.
 //
 // Returns:
-//   *song.Song: The song that was found.
-//   error: An error if the search or retrieval of song details fails.
+//
+//	*song.Song: The song that was found.
+//	error: An error if the search or retrieval of song details fails.
 func SearchYoutube(query string) (*song.Song, error) {
 	apiKey := os.Getenv("YOUTUBE_API_KEY")
 
-	httpClient := &http.Client{
-		Transport: &transport.APIKey{Key: apiKey},
-	}
-
-	service, err := youtube.New(httpClient)
+	// Create a new YouTube service
+	service, err := youtube.NewService(context.Background(), option.WithAPIKey(apiKey))
 	if err != nil {
 		return nil, err
 	}
 
-	searchResponse, err := service.Search.List([]string{"id,snippet"}).Q(query).MaxResults(1).Do()
-	if err != nil {
-		return nil, err
-	}
-	if len(searchResponse.Items) == 0 {
-		return nil, errors.New("no videos found")
+	var videoID string
+	if !isYouTubeLink(query) {
+		searchResponse, err := service.Search.List([]string{"id,snippet"}).Q(query).MaxResults(1).Do()
+		if err != nil {
+			return nil, err
+		}
+		if len(searchResponse.Items) == 0 {
+			return nil, errors.New("no videos found")
+		}
+		searchResult := searchResponse.Items[0]
+		videoID = searchResult.Id.VideoId
+	} else {
+		videoID = getYouTubeVideoID(query)
 	}
 
-	video := searchResponse.Items[0]
-	videoID := video.Id.VideoId
-	videoResponse, err := service.Videos.List([]string{"snippet,contentDetails"}).Id(videoID).Do()
+	video, err := service.Videos.List([]string{"snippet,contentDetails"}).Id(videoID).Do()
 	if err != nil {
 		return nil, err
 	}
-	if len(videoResponse.Items) == 0 {
+	if len(video.Items) == 0 {
 		return nil, errors.New("video details not found")
 	}
 
-	duration, err := parseDuration(videoResponse.Items[0].ContentDetails.Duration)
+	videoStream := video.Items[0]
+	duration, err := parseDuration(videoStream.ContentDetails.Duration)
 	if err != nil {
 		return nil, err
 	}
 	song := &song.Song{
 		URL:      fmt.Sprintf("https://www.youtube.com/watch?v=%s", videoID),
-		Title:    video.Snippet.Title,
+		Title:    videoStream.Snippet.Title,
 		Duration: duration,
 	}
 
 	return song, nil
+}
+
+func getYouTubeVideoID(link string) string {
+	pattern := `^(https?://)?(www\.)?youtube\.com/watch\?v=([a-zA-Z0-9_-]{11})$`
+
+	regex := regexp.MustCompile(pattern)
+	matches := regex.FindStringSubmatch(link)
+	if len(matches) == 4 {
+		return matches[3]
+	}
+
+	return ""
 }
 
 func parseDuration(durationString string) (time.Duration, error) {
@@ -93,4 +110,12 @@ func parseDuration(durationString string) (time.Duration, error) {
 	duration := time.Duration(totalSeconds) * time.Second
 
 	return duration, nil
+}
+
+func isYouTubeLink(link string) bool {
+	// Regular expression pattern to match a YouTube video URL
+	pattern := `^(https?://)?(www\.)?youtube\.com/watch\?v=[a-zA-Z0-9_-]{11}$`
+
+	match, _ := regexp.MatchString(pattern, link)
+	return match
 }

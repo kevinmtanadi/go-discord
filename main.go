@@ -34,12 +34,11 @@ func main() {
 
 	// Handle messages sent to Discord
 	// When adding a new command to handle, add the function onto handler package
-	h.Await("hello", h.SayHello)
-	h.Await("join", h.JoinVoiceChannel)
 	h.Await("play", h.PlaySong)
 
 	// Daily call functions at 08:00 AM
 	go service.DailyCall(discord)
+	go service.PlaySong(discord)
 
 	// Keep the bot alive until stopped
 	Loop()

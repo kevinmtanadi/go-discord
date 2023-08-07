@@ -115,3 +115,19 @@ func DeleteFileExists(fileName string) {
 		}
 	}
 }
+
+func FormatTime(t time.Duration) string {
+	formattedDuration := t.String()
+	duration, err := time.ParseDuration(formattedDuration)
+	if err != nil {
+		logger.Log("Failed to parse duration: " + err.Error())
+		return ""
+	}
+
+	minutes := int(duration.Minutes())
+	seconds := int(duration.Seconds()) % 60
+
+	formattedTime := fmt.Sprintf("%02d:%02d", minutes, seconds)
+
+	return formattedTime
+}
