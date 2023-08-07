@@ -11,6 +11,13 @@ import (
 	"github.com/iawia002/lux/extractors/youtube"
 )
 
+// DownloadAudio downloads audio from the given URL.
+//
+// Parameters:
+// - url: a string representing the URL from which to download the audio.
+// - wg: a pointer to a sync.WaitGroup that is used to synchronize multiple goroutines.
+//
+// Return type: None.
 func DownloadAudio(url string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
@@ -19,15 +26,15 @@ func DownloadAudio(url string, wg *sync.WaitGroup) {
 
 	e := youtube.New()
 	data, err := e.Extract(url, extractors.Options{})
-
 	if err != nil {
 		logger.Log("Fail extracting: " + err.Error())
+		return
 	}
 
 	result := data[0]
 	fmt.Println(result.Streams)
 
-	defaultDownloader := downloader.New(downloader.Options{
+	options := downloader.Options{
 		Silent:         false,
 		InfoOnly:       false,
 		Stream:         "250",
@@ -38,11 +45,11 @@ func DownloadAudio(url string, wg *sync.WaitGroup) {
 		MultiThread:    true,
 		ThreadNumber:   8,
 		RetryTimes:     1,
-	})
+	}
+	defaultDownloader := downloader.New(options)
 
 	err = defaultDownloader.Download(result)
 	if err != nil {
-		logger.Log("Fail extracting: " + err.Error())
+		logger.Log("Fail downloading: " + err.Error())
 	}
-
 }

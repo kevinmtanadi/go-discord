@@ -5,6 +5,7 @@ import (
 	"go-discord/helper"
 	"go-discord/logger"
 	"go-discord/service"
+	"go-discord/song"
 	"sync"
 
 	"github.com/bwmarrin/discordgo"
@@ -24,20 +25,23 @@ func (h *Handler) Join(args ...interface{}) {
 func (h *Handler) PlaySong(args ...interface{}) {
 	title := helper.GetArgs(args)
 
-	song, err := service.SearchYoutube(title)
+	searchResult, err := service.SearchYoutube(title)
 	if err != nil {
 		logger.Log("Error searching youtube: " + err.Error())
 	}
 
+	songList := song.GetSongListInstance()
+	songList.AddSong(*searchResult)
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	go service.DownloadAudio(song.URL, &wg)
+	go service.DownloadAudio(searchResult.URL, &wg)
 
 	wg.Wait()
 
 	embed := discordgo.MessageEmbed{
-		Description: fmt.Sprintf("Currently playing **%s**", song.Title),
+		Description: fmt.Sprintf("Currently playing **%s**", searchResult.Title),
 	}
 	h.SendEmbed(&embed)
 }
