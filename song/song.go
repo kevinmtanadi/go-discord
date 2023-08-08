@@ -1,14 +1,17 @@
 package song
 
 import (
-	"fmt"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 type Song struct {
-	Title    string
-	Duration time.Duration
-	URL      string
+	Title     string
+	Duration  time.Duration
+	URL       string
+	ChannelID string
+	Requester *discordgo.User
 }
 
 type SongList struct {
@@ -31,16 +34,6 @@ func (s *SongList) AddSong(song Song) {
 	s.Songs = append(s.Songs, song)
 }
 
-func (s *SongList) PlaySong() {
-	go func() {
-		for {
-			if len(s.Songs) > 0 {
-				// PLAY THE SONG
-				currentSong := s.Songs[0]
-				fmt.Println(currentSong)
-
-				time.Sleep(currentSong.Duration)
-			}
-		}
-	}()
+func (s *SongList) Clear() {
+	s.Songs = []Song{}
 }

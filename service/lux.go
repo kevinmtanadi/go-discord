@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"go-discord/helper"
 	"go-discord/logger"
 	"sync"
 
@@ -18,11 +17,13 @@ import (
 // - wg: a pointer to a sync.WaitGroup that is used to synchronize multiple goroutines.
 //
 // Return type: None.
+
+var streamOptions = []string{"249", "250", "251"}
+
 func DownloadAudio(url string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	filename := "audio"
-	helper.DeleteFileExists(filename + ".webm")
 
 	e := youtube.New()
 	data, err := e.Extract(url, extractors.Options{})
@@ -32,24 +33,34 @@ func DownloadAudio(url string, wg *sync.WaitGroup) {
 	}
 
 	result := data[0]
-	fmt.Println(result.Streams)
 
-	options := downloader.Options{
-		Silent:         false,
-		InfoOnly:       false,
-		Stream:         "250",
-		OutputPath:     "./",
-		OutputName:     filename,
-		FileNameLength: 10,
-		Caption:        false,
-		MultiThread:    true,
-		ThreadNumber:   8,
-		RetryTimes:     1,
-	}
-	defaultDownloader := downloader.New(options)
+	i := 0
+	maxTry := 50
 
-	err = defaultDownloader.Download(result)
-	if err != nil {
-		logger.Log("Fail downloading: " + err.Error())
+	for {
+		if i >= maxTry {
+			logger.Log(fmt.Sprintf("Failed to download %s after %d tries", result.Title, maxTry))
+		}
+		// Keep trying to download
+		curOpt := streamOptions[i%len(streamOptions)]
+		options := downloader.Options{
+			Silent:         true,
+			InfoOnly:       false,
+			Stream:         curOpt,
+			OutputPath:     "./",
+			OutputName:     filename,
+			FileNameLength: 64,
+			Caption:        false,
+			MultiThread:    true,
+			ThreadNumber:   8,
+			RetryTimes:     10,
+		}
+		defaultDownloader := downloader.New(options)
+
+		err = defaultDownloader.Download(result)
+		if err == nil {
+			return
+		}
+		i++
 	}
 }

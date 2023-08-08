@@ -12,16 +12,6 @@ import (
 	"time"
 )
 
-// func ConvertInterfaceToString(is ...interface{}) string {
-// 	flattenedIntf := flattenInterfaceToString(is)
-// 	res := []string{}
-// 	for _, i := range is {
-// 		fmt.Println(i)
-// 		res = append(res, i.(string))
-// 	}
-// 	return strings.Join(res, " ")
-// }
-
 func GetArgs(input interface{}) string {
 	args := ConvertInterfaceToString(input)
 	return args[1 : len(args)-3]

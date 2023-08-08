@@ -35,6 +35,8 @@ func main() {
 	// Handle messages sent to Discord
 	// When adding a new command to handle, add the function onto handler package
 	h.Await("play", h.PlaySong)
+	h.Await("queue", h.PrintQueueList)
+	h.Await("stop", h.StopPlayingSong)
 
 	// Daily call functions at 08:00 AM
 	go service.DailyCall(discord)
