@@ -55,7 +55,7 @@ func (h *Handler) StopPlayingSong(args ...interface{}) {
 	guildID := h.s.State.Application.GuildID
 	voiceConn := h.s.VoiceConnections
 	if _, ok := voiceConn[guildID]; ok {
-		voiceConn[guildID].Close()
+		voiceConn[guildID].Disconnect()
 	}
 	helper.DeleteFileExists("audio.webm")
 }
