@@ -27,7 +27,7 @@ func Searchyoutube(query string, guildID string) (*song.Song, error) {
 	var durationStr string
 
 	if !isYouTubeLink(query) {
-		output, err := exec.Command("youtube-dl", "--get-title", "--get-duration", "ytsearch1:"+query).Output()
+		output, err := exec.Command("./youtube-dl", "--get-title", "--get-duration", "ytsearch1:"+query).Output()
 		if err != nil {
 			return nil, err
 		}
@@ -41,7 +41,7 @@ func Searchyoutube(query string, guildID string) (*song.Song, error) {
 		title = result[0]
 		durationStr = result[1]
 	} else {
-		cmd := exec.Command("youtube-dl", "--get-title", "--get-duration", query)
+		cmd := exec.Command("./youtube-dl", "--get-title", "--get-duration", query)
 		output, err := cmd.Output()
 		if err != nil {
 			fmt.Println("Error executing command:", err)
@@ -67,7 +67,7 @@ func Searchyoutube(query string, guildID string) (*song.Song, error) {
 func DownloadYoutube(song *song.Song, guildID string) error {
 	if !isYouTubeLink(song.SearchQuery) {
 		// exec youtube-dl command
-		cmd := exec.Command("youtube-dl", "-f", "250", "-o", song.Filename, "-q", "ytsearch1:"+song.SearchQuery)
+		cmd := exec.Command("./youtube-dl", "-f", "250", "-o", song.Filename, "-q", "ytsearch1:"+song.SearchQuery)
 		_, err := cmd.Output()
 		if err != nil {
 			fmt.Println("Error executing command:", err)
@@ -75,7 +75,7 @@ func DownloadYoutube(song *song.Song, guildID string) error {
 		}
 
 	} else {
-		cmd := exec.Command("youtube-dl", "-f", "250", "-o", song.Filename, "-q", song.SearchQuery)
+		cmd := exec.Command("./youtube-dl", "-f", "250", "-o", song.Filename, "-q", song.SearchQuery)
 		_, err := cmd.Output()
 		if err != nil {
 			fmt.Println("Error executing command:", err)
