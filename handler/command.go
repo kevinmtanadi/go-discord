@@ -32,10 +32,12 @@ func (h *Handler) PlaySong(args ...interface{}) {
 	}
 
 	searchResult.Requester = author
-	searchResult.ChannelID = h.m.ChannelID
+	searchResult.RequesterChannelID = h.m.ChannelID
+	channelID := h.getUserVoiceState(h.m.GuildID, author.ID)
+	searchResult.VoiceChannelID = channelID
 
 	songList := song.GetSongListInstance()
-	songList.AddSong(*searchResult)
+	songList.AddSong(*searchResult, h.m.GuildID)
 
 	embed = discordgo.MessageEmbed{
 		Description: fmt.Sprintf("**Added Song**\n\n**Song Title**\n%s\n\n**Track Length**\n%s", searchResult.Title, helper.FormatTime(searchResult.Duration)),
@@ -50,7 +52,7 @@ func (h *Handler) PlaySong(args ...interface{}) {
 
 func (h *Handler) StopPlayingSong(args ...interface{}) {
 	songList := song.GetSongListInstance()
-	songList.Clear()
+	songList.Clear(h.m.GuildID)
 
 	guildID := h.s.State.Application.GuildID
 	voiceConn := h.s.VoiceConnections
@@ -62,7 +64,7 @@ func (h *Handler) StopPlayingSong(args ...interface{}) {
 
 func (h *Handler) ClearSongQueue(args ...interface{}) {
 	songList := song.GetSongListInstance()
-	songList.Clear()
+	songList.Clear(h.m.GuildID)
 }
 
 func (h *Handler) Skip(args ...interface{}) {
@@ -73,7 +75,7 @@ func (h *Handler) PrintQueueList(args ...interface{}) {
 	songList := song.GetSongListInstance()
 
 	songString := "**Song Queue**\n"
-	for _, song := range songList.Songs {
+	for _, song := range songList.Songs[h.m.GuildID] {
 		songString += fmt.Sprintf("%s - %s\n\n", song.Requester.Username, song.Title)
 	}
 
@@ -81,4 +83,22 @@ func (h *Handler) PrintQueueList(args ...interface{}) {
 		Description: songString,
 	}
 	h.SendEmbed(embed)
+}
+
+func (h *Handler) getUserVoiceState(guildID string, userID string) string {
+	voiceState, err := h.s.State.VoiceState(guildID, userID)
+	if err != nil {
+		logger.Log("Error getting voice state: " + err.Error())
+		return ""
+	}
+
+	if voiceState != nil && voiceState.ChannelID != "" {
+		return voiceState.ChannelID
+	}
+
+	embed := discordgo.MessageEmbed{
+		Description: "User is not connected to a voice channel",
+	}
+	h.SendEmbed(&embed)
+	return ""
 }

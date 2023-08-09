@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-discord/logger"
 	"sync"
+	"time"
 
 	"github.com/iawia002/lux/downloader"
 	"github.com/iawia002/lux/extractors"
@@ -20,10 +21,8 @@ import (
 
 var streamOptions = []string{"249", "250", "251"}
 
-func DownloadAudio(url string, wg *sync.WaitGroup) {
+func DownloadAudio(url string, wg *sync.WaitGroup, guildID string) {
 	defer wg.Done()
-
-	filename := "audio"
 
 	e := youtube.New()
 	data, err := e.Extract(url, extractors.Options{})
@@ -44,16 +43,13 @@ func DownloadAudio(url string, wg *sync.WaitGroup) {
 		// Keep trying to download
 		curOpt := streamOptions[i%len(streamOptions)]
 		options := downloader.Options{
-			Silent:         true,
-			InfoOnly:       false,
-			Stream:         curOpt,
-			OutputPath:     "./",
-			OutputName:     filename,
-			FileNameLength: 64,
-			Caption:        false,
-			MultiThread:    true,
-			ThreadNumber:   8,
-			RetryTimes:     10,
+			Silent:       true,
+			Stream:       curOpt,
+			OutputPath:   "./",
+			OutputName:   guildID,
+			MultiThread:  true,
+			ThreadNumber: 8,
+			RetryTimes:   10,
 		}
 		defaultDownloader := downloader.New(options)
 
@@ -62,5 +58,7 @@ func DownloadAudio(url string, wg *sync.WaitGroup) {
 			return
 		}
 		i++
+
+		time.Sleep(1 * time.Second)
 	}
 }

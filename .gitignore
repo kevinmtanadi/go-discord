@@ -1,6 +1,8 @@
 logs/*
 
 *.txt
+*.env
 .env
 *.webm
 *.download
+go-discord.exe
