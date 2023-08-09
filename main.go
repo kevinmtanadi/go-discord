@@ -16,34 +16,38 @@ import (
 )
 
 func main() {
-	discord, err := discordgo.New("Bot " + os.Getenv("DISCORD_TOKEN"))
-	if err != nil {
-		logger.Log("Unable to connect to the bot: " + err.Error())
+	{
+
+		discord, err := discordgo.New("Bot " + os.Getenv("DISCORD_TOKEN"))
+		if err != nil {
+			logger.Log("Unable to connect to the bot: " + err.Error())
+		}
+
+		err = discord.Open()
+		if err != nil {
+			logger.Log("Unable to connect to the bot: " + err.Error())
+		}
+
+		fmt.Println("Bot connected")
+
+		// Create a handler to handle the app
+		h := handler.NewHandler()
+		discord.AddHandler(h.ReadCommand)
+
+		// Handle messages sent to Discord
+		// When adding a new command to handle, add the function onto handler package
+		h.Await("play", h.PlaySong)
+		h.Await("queue", h.PrintQueueList)
+		h.Await("stop", h.StopPlayingSong)
+
+		// Daily call functions at 08:00 AM
+		go service.DailyCall(discord)
+
+		go service.PlaySong(discord)
+
+		// Keep the bot alive until stopped
+		Loop()
 	}
-
-	err = discord.Open()
-	if err != nil {
-		logger.Log("Unable to connect to the bot: " + err.Error())
-	}
-
-	fmt.Println("Bot connected")
-
-	// Create a handler to handle the app
-	h := handler.NewHandler()
-	discord.AddHandler(h.ReadCommand)
-
-	// Handle messages sent to Discord
-	// When adding a new command to handle, add the function onto handler package
-	h.Await("play", h.PlaySong)
-	h.Await("queue", h.PrintQueueList)
-	h.Await("stop", h.StopPlayingSong)
-
-	// Daily call functions at 08:00 AM
-	go service.DailyCall(discord)
-	go service.PlaySong(discord)
-
-	// Keep the bot alive until stopped
-	Loop()
 }
 
 var projectFolder *string

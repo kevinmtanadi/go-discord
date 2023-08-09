@@ -7,9 +7,11 @@ import (
 )
 
 type Song struct {
+	SearchQuery        string
 	Title              string
 	Duration           time.Duration
 	URL                string
+	Filename           string
 	RequesterChannelID string
 	VoiceChannelID     string
 	Requester          *discordgo.User

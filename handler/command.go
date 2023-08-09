@@ -18,29 +18,27 @@ func (h *Handler) PlaySong(args ...interface{}) {
 	author := h.m.Author
 
 	var embed discordgo.MessageEmbed
-	searchResult, err := service.SearchYoutube(title)
-	if err != nil {
-		logger.Log("Error searching youtube: " + err.Error())
-	}
 
-	if searchResult == nil {
-		embed := discordgo.MessageEmbed{
-			Description: "No song found",
+	songSearched, err := service.Searchyoutube(title, h.m.GuildID)
+	if err != nil {
+		embed = discordgo.MessageEmbed{
+			Description: fmt.Sprintf("Error searching for song **%s**", title),
 		}
 		h.SendEmbed(&embed)
 		return
 	}
 
-	searchResult.Requester = author
-	searchResult.RequesterChannelID = h.m.ChannelID
-	channelID := h.getUserVoiceState(h.m.GuildID, author.ID)
-	searchResult.VoiceChannelID = channelID
-
 	songList := song.GetSongListInstance()
-	songList.AddSong(*searchResult, h.m.GuildID)
+	voiceChannelID := h.getUserVoiceState(h.m.GuildID, author.ID)
+	songSearched.SearchQuery = title
+	songSearched.VoiceChannelID = voiceChannelID
+	songSearched.RequesterChannelID = h.m.ChannelID
+	songSearched.Requester = author
+
+	songList.AddSong(*songSearched, h.m.GuildID)
 
 	embed = discordgo.MessageEmbed{
-		Description: fmt.Sprintf("**Added Song**\n\n**Song Title**\n%s\n\n**Track Length**\n%s", searchResult.Title, helper.FormatTime(searchResult.Duration)),
+		Description: fmt.Sprintf("**Added Song**\n\n**Song Title**\n%s\n\n**Song Duration**\n%s", songSearched.Title, helper.FormatTime(songSearched.Duration)),
 		Footer: &discordgo.MessageEmbedFooter{
 			Text:    fmt.Sprintf("Requested by %s", author.Username),
 			IconURL: author.AvatarURL("64"),
@@ -59,7 +57,7 @@ func (h *Handler) StopPlayingSong(args ...interface{}) {
 	if _, ok := voiceConn[guildID]; ok {
 		voiceConn[guildID].Disconnect()
 	}
-	helper.DeleteFileExists("audio.webm")
+	helper.DeleteFileExists(guildID + ".webm")
 }
 
 func (h *Handler) ClearSongQueue(args ...interface{}) {
@@ -74,9 +72,11 @@ func (h *Handler) Skip(args ...interface{}) {
 func (h *Handler) PrintQueueList(args ...interface{}) {
 	songList := song.GetSongListInstance()
 
-	songString := "**Song Queue**\n"
+	fmt.Println(h.m.GuildID)
+
+	songString := "**Song Queue**\n==========================\n"
 	for _, song := range songList.Songs[h.m.GuildID] {
-		songString += fmt.Sprintf("%s - %s\n\n", song.Requester.Username, song.Title)
+		songString += fmt.Sprintf("**%s**\n - %s\n\n", song.Requester.Username, song.Title)
 	}
 
 	embed := &discordgo.MessageEmbed{

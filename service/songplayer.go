@@ -5,7 +5,6 @@ import (
 	"go-discord/helper"
 	"go-discord/logger"
 	"go-discord/song"
-	"sync"
 	"time"
 
 	"github.com/bwmarrin/dgvoice"
@@ -13,7 +12,6 @@ import (
 )
 
 func PlaySong(s *discordgo.Session) {
-	var wg sync.WaitGroup
 	for {
 		songLists := song.GetSongListInstance()
 		for guildID, songs := range songLists.Songs {
@@ -28,12 +26,9 @@ func PlaySong(s *discordgo.Session) {
 			}
 			currentSong := songs[0]
 
-			wg.Add(1)
-
-			go DownloadAudio(currentSong.URL, &wg, guildID)
-
-			wg.Wait()
-			time.Sleep(3 * time.Second)
+			fmt.Println(currentSong.Title)
+			DownloadYoutube(&currentSong, guildID)
+			time.Sleep(1 * time.Second)
 
 			voice, err := s.ChannelVoiceJoin(guildID, currentSong.VoiceChannelID, false, true)
 			if err != nil {
@@ -43,11 +38,11 @@ func PlaySong(s *discordgo.Session) {
 			embed := discordgo.MessageEmbed{
 				Description: fmt.Sprintf("Currently playing **%s**", currentSong.Title),
 			}
-			s.ChannelMessageSendEmbed(currentSong.RequesterChannelID, &embed)
 
+			s.ChannelMessageSendEmbed(currentSong.RequesterChannelID, &embed)
 			s.UpdateGameStatus(0, currentSong.Title)
-			dgvoice.PlayAudioFile(voice, guildID+".webm", make(chan bool))
-			helper.DeleteFileExists(guildID + ".webm")
+
+			dgvoice.PlayAudioFile(voice, currentSong.Filename, make(chan bool))
 
 			songLists.Songs[guildID] = songs[1:]
 		}

@@ -121,3 +121,26 @@ func FormatTime(t time.Duration) string {
 
 	return formattedTime
 }
+
+func ParseStringToTimeDuration(input string) time.Duration {
+	parts := strings.Split(input, ":")
+	if len(parts) != 2 {
+		fmt.Println("Invalid input format")
+		return 0
+	}
+
+	minutes, err := strconv.Atoi(parts[0])
+	if err != nil {
+		fmt.Println("Invalid minute format")
+		return 0
+	}
+
+	seconds, err := strconv.Atoi(parts[1])
+	if err != nil {
+		fmt.Println("Invalid second format")
+		return 0
+	}
+
+	duration := time.Duration(minutes)*time.Minute + time.Duration(seconds)*time.Second
+	return duration
+}

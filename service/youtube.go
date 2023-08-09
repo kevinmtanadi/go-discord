@@ -1,73 +1,90 @@
 package service
 
 import (
-	"context"
-	"errors"
+	"bytes"
 	"fmt"
+	"go-discord/helper"
 	"go-discord/song"
-	"os"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"net/url"
+	"os/exec"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
-	"google.golang.org/api/option"
-	"google.golang.org/api/youtube/v3"
+	"github.com/PuerkitoBio/goquery"
+	"golang.org/x/text/encoding/japanese"
+	"golang.org/x/text/transform"
 )
 
-// SearchYoutube searches for a song on YouTube based on the given query.
-//
-// Parameters:
-//
-//	query (string): The search query.
-//
-// Returns:
-//
-//	*song.Song: The song that was found.
-//	error: An error if the search or retrieval of song details fails.
-func SearchYoutube(query string) (*song.Song, error) {
-	apiKey := os.Getenv("YOUTUBE_API_KEY")
+// TODO USE A MORE EFFICIENT YOUTUBE SEARCH
+func Searchyoutube(query string, guildID string) (*song.Song, error) {
+	fileName := guildID + ".webm"
+	var title string
+	var durationStr string
 
-	// Create a new YouTube service
-	service, err := youtube.NewService(context.Background(), option.WithAPIKey(apiKey))
-	if err != nil {
-		return nil, err
-	}
-
-	var videoID string
 	if !isYouTubeLink(query) {
-		searchResponse, err := service.Search.List([]string{"id,snippet"}).Q(query).MaxResults(1).Do()
+		output, err := exec.Command("youtube-dl", "--get-title", "--get-duration", "ytsearch1:"+query).Output()
 		if err != nil {
 			return nil, err
 		}
-		if len(searchResponse.Items) == 0 {
-			return nil, errors.New("no videos found")
-		}
-		searchResult := searchResponse.Items[0]
-		videoID = searchResult.Id.VideoId
+
+		bufs := new(bytes.Buffer)
+		wr := transform.NewWriter(bufs, japanese.ShiftJIS.NewDecoder())
+		wr.Write(output)
+		wr.Close()
+
+		result := strings.Split(string(output), "\n")
+		title = result[0]
+		durationStr = result[1]
 	} else {
-		videoID = getYouTubeVideoID(query)
+		cmd := exec.Command("youtube-dl", "--get-title", "--get-duration", query)
+		output, err := cmd.Output()
+		if err != nil {
+			fmt.Println("Error executing command:", err)
+			return nil, err
+		}
+
+		result := strings.Split(string(output), "\n")
+		title = result[0]
+		durationStr = result[1]
 	}
 
-	video, err := service.Videos.List([]string{"snippet,contentDetails"}).Id(videoID).Do()
-	if err != nil {
-		return nil, err
-	}
-	if len(video.Items) == 0 {
-		return nil, errors.New("video details not found")
-	}
+	duration := helper.ParseStringToTimeDuration(durationStr)
 
-	videoStream := video.Items[0]
-	duration, err := parseDuration(videoStream.ContentDetails.Duration)
-	if err != nil {
-		return nil, err
-	}
-	song := &song.Song{
-		URL:      fmt.Sprintf("https://www.youtube.com/watch?v=%s", videoID),
-		Title:    videoStream.Snippet.Title,
+	songSearched := song.Song{
+		Title:    title,
 		Duration: duration,
+		Filename: fileName,
 	}
 
-	return song, nil
+	return &songSearched, nil
+}
+
+func DownloadYoutube(song *song.Song, guildID string) error {
+	if !isYouTubeLink(song.SearchQuery) {
+		// exec youtube-dl command
+		cmd := exec.Command("youtube-dl", "-f", "250", "-o", song.Filename, "-q", "ytsearch1:"+song.SearchQuery)
+		_, err := cmd.Output()
+		if err != nil {
+			fmt.Println("Error executing command:", err)
+			return err
+		}
+
+	} else {
+		cmd := exec.Command("youtube-dl", "-f", "250", "-o", song.Filename, "-q", song.SearchQuery)
+		_, err := cmd.Output()
+		if err != nil {
+			fmt.Println("Error executing command:", err)
+			return err
+		}
+	}
+
+	return nil
+
 }
 
 func getYouTubeVideoID(link string) string {
@@ -118,4 +135,76 @@ func isYouTubeLink(link string) bool {
 
 	match, _ := regexp.MatchString(pattern, link)
 	return match
+}
+
+func ScrapeYoutube(query string) {
+	encodedQuery := url.QueryEscape(query)
+	searchURL := fmt.Sprintf("https://www.youtube.com/results?search_query=%s", encodedQuery)
+
+	response, err := http.Get(searchURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer response.Body.Close()
+
+	// Parse the HTML response using goquery
+	doc, err := goquery.NewDocumentFromReader(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	html, err := ioutil.ReadAll(response.Body)
+
+	htmlText := string(html)
+	regexPattern := `/(?<=shortDescription":").*(?=","isCrawlable)/`
+
+	re := regexp.MustCompile(regexPattern)
+	matches := re.FindStringSubmatch(htmlText)
+	if len(matches) > 0 {
+		fmt.Println(matches)
+	} else {
+		fmt.Println("No matches found")
+	}
+
+	fmt.Println("Scrape result: ")
+	var firstVideoLink string
+	doc.Find(`(?<=shortDescription":").*(?=","isCrawlable)`).Each(func(index int, item *goquery.Selection) {
+		if index == 0 {
+			// Extract the video link
+			videoLink, _ := item.Attr("href")
+			firstVideoLink = "https://www.youtube.com" + videoLink
+			return
+		}
+	})
+	fmt.Println(firstVideoLink)
+	fmt.Println("EOL")
+}
+
+func TestScrape() {
+	html := `
+        <html>
+            <head>
+                <title>Sample HTML Document</title>
+            </head>
+            <body>
+                <h1>Hello, goquery!</h1>
+                <p>Welcome to the world of web scraping.</p>
+            </body>
+        </html>
+    `
+
+	reader := strings.NewReader(html)
+
+	doc, err := goquery.NewDocumentFromReader(reader)
+	if err != nil {
+		log.Fatal("Error creating document:", err)
+	}
+
+	doc.Find("h1").Each(func(i int, s *goquery.Selection) {
+		fmt.Println(s.Text())
+	})
+
+	doc.Find("p").Each(func(i int, s *goquery.Selection) {
+		fmt.Println(s.Text())
+	})
 }
